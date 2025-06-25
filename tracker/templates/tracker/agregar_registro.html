@@ -1,0 +1,15 @@
+{% extends "tracker/base.html" %}
+
+{% block content %}
+    <h2>Añadir Registro de Hoy</h2>
+    <p>Añade una nueva serie a tu entrenamiento de hoy. Si no has empezado uno, se creará automáticamente.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        
+        {{ form.as_p }}
+        
+        <button type="submit">Guardar Registro</button>
+    </form>
+
+{% endblock %}

@@ -1,0 +1,32 @@
+{% extends "tracker/base.html" %}
+
+{% block content %}
+    <h2>Detalles del Entrenamiento - {{ sesion.fecha|date:"d \d\e F \d\e Y" }}</h2>
+
+    {% if registros %}
+        <table>
+            <thead>
+                <tr>
+                    <th>Ejercicio</th>
+                    <th>Repeticiones</th>
+                    <th>Peso</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for registro in registros %}
+                <tr>
+                    <td>{{ registro.ejercicio.nombre }}</td>
+                    <td>{{ registro.repeticiones }}</td>
+                    <td>{{ registro.peso }} kg</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay registros para esta sesión.</p>
+    {% endif %}
+    
+    <br>
+    <a href="{% url 'lista-sesiones' %}">‹ Volver al historial</a>
+
+{% endblock %}

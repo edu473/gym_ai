@@ -1,0 +1,67 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Dashboard de {{ user.username }}</h2>
+
+    {% if plan %}
+        <div class="card mt-4">
+            <div class="card-header">
+                <h4>Tu Plan Semanal ({{ plan.fecha_inicio }} - {{ plan.fecha_fin }})</h4>
+            </div>
+            <div class="card-body">
+                {% for dia in plan.dias.all %}
+                    <div class="mb-3">
+                        <h5>{{ dia.dia_semana }}</h5>
+                        <ul>
+                            {% for ejercicio in dia.ejercicios.all %}
+                                <li>{{ ejercicio.ejercicio.nombre }}: {{ ejercicio.series }} series de {{ ejercicio.repeticiones }} repeticiones</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% else %}
+        <div class="alert alert-info mt-4">
+            No tienes un plan de entrenamiento activo.
+        </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'crear-plan' %}" class="btn btn-primary">Generar Nuevo Plan</a>
+        <a href="{% url 'lista-sesiones' %}" class="btn btn-secondary">Ver Sesiones Pasadas</a>
+        <a href="{% url 'user-profile' %}" class="btn btn-info">Editar Perfil</a>
+    </div>
+
+    <div class="mt-5">
+        <h4>Tu Progreso</h4>
+        <canvas id="progressChart"></canvas>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const progressChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ fechas_json|safe }},
+            datasets: [{
+                label: 'Volumen de Entrenamiento (kg)',
+                data: {{ volumenes_json|safe }},
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

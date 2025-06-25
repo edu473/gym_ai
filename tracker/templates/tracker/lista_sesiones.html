@@ -1,0 +1,22 @@
+{% extends "tracker/base.html" %}
+
+{% block content %}
+    <h2>Historial de Entrenamientos</h2>
+
+    {% if sesiones %}
+        <article>
+            <ul>
+                {% for sesion in sesiones %}
+                    <li>
+                        <a href="{% url 'detalle-sesion' pk=sesion.pk %}">
+                            Sesión del {{ sesion.fecha|date:"d \d\e F \d\e Y" }}
+                        </a>
+                    </li>
+                {% endfor %}
+            </ul>
+        </article>
+    {% else %}
+        <p>Aún no has registrado ninguna sesión de entrenamiento. ¡Empieza hoy mismo!</p>
+    {% endif %}
+
+{% endblock %}

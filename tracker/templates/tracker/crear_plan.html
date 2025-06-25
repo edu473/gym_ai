@@ -1,0 +1,14 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Generar Nuevo Plan de Entrenamiento</h2>
+    <p>La IA utilizará la información de tu perfil (peso y objetivos) para generar un plan personalizado.</p>
+
+    <form method="post">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Generar Plan</button>
+    </form>
+</div>
+{% endblock %}

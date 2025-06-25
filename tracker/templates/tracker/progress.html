@@ -1,0 +1,47 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Tu Progreso</h2>
+
+    <form method="post" class="mt-4">
+        {% csrf_token %}
+        {{ form.as_p }}
+        <button type="submit" class="btn btn-primary">Ver Progreso</button>
+    </form>
+
+    {% if ejercicio_seleccionado %}
+        <div class="mt-5">
+            <h4>Progreso para {{ ejercicio_seleccionado.nombre }}</h4>
+            <canvas id="progressChart"></canvas>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if ejercicio_seleccionado %}
+<script>
+    const ctx = document.getElementById('progressChart').getContext('2d');
+    const progressChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ fechas_json|safe }},
+            datasets: [{
+                label: 'Peso Levantado (kg)',
+                data: {{ pesos_json|safe }},
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}
