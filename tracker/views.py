@@ -11,7 +11,10 @@ from .forms import PlanSemanalForm, UserProfileForm, ProgressForm
 from .models import (DiaPlan, Ejercicio, EjercicioPlan, PlanSemanal,
                      RegistroSet, SesionEntrenamiento, UserProfile)
 
-import openai
+import google.generativeai as genai
+from dotenv import load_dotenv
+import os
+load_dotenv()
 
 class SignUpView(CreateView):
     form_class = UserCreationForm
@@ -45,7 +48,62 @@ class DetalleSesionView(LoginRequiredMixin, DetailView):
 class EjercicioListView(LoginRequiredMixin, ListView):
     model = Ejercicio
     template_name = 'tracker/ejercicio_list.html'
-    context_object_name = 'ejercicios'
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        ejercicios = context['object_list']
+        ejercicios_agrupados = {}
+        for ejercicio in ejercicios:
+            if ejercicio.muscle_group not in ejercicios_agrupados:
+                ejercicios_agrupados[ejercicio.muscle_group] = []
+            ejercicios_agrupados[ejercicio.muscle_group].append(ejercicio)
+        context['ejercicios_agrupados'] = ejercicios_agrupados
+        return context
+
+    def get_queryset(self):
+        ejercicios = super().get_queryset()
+        for ejercicio in ejercicios:
+            if not ejercicio.descripcion or not ejercicio.muscle_group:
+                try:
+                    genai.configure(api_key=os.environ.get('api_key'))
+                    model = genai.GenerativeModel('gemini-2.5-flash')
+                    if not ejercicio.descripcion:
+                        prompt = f"""
+                        Proporciona una descripción detallada de cómo realizar el siguiente ejercicio: {ejercicio.nombre}.
+                        La descripción debe ser clara, concisa y fácil de entender para un principiante, y debe estar en formato markdown.
+                        """
+                        response = model.generate_content(prompt)
+                        ejercicio.descripcion = response.text
+                    if not ejercicio.muscle_group:
+                        prompt = f"""
+                        ¿Cuál es el grupo muscular principal que trabaja el siguiente ejercicio: {ejercicio.nombre}?
+                        Responde solo con el nombre del grupo muscular (ej: Pecho, Espalda, Piernas, etc.).
+                        """
+                        response = model.generate_content(prompt)
+                        ejercicio.muscle_group = response.text.strip()
+                    ejercicio.save()
+                except Exception as e:
+                    print(f"Error al generar datos para {ejercicio.nombre}: {e}")
+        return ejercicios
+
+class EjercicioDetailView(LoginRequiredMixin, DetailView):
+    model = Ejercicio
+    template_name = 'tracker/ejercicio_detail.html'
+    context_object_name = 'ejercicio'
+
+class SessionAssistantView(LoginRequiredMixin, DetailView):
+    model = SesionEntrenamiento
+    template_name = 'tracker/session_assistant.html'
+    context_object_name = 'sesion'
+
+@login_required
+def finalizar_sesion(request, pk):
+    sesion = SesionEntrenamiento.objects.get(pk=pk)
+    # Here you can add any logic to save the session details
+    # For example, you could mark the session as completed
+    return redirect('lista-sesiones')
+
+
+
 
 class AgregarRegistroView(LoginRequiredMixin, CreateView):
     model = RegistroSet
@@ -110,48 +168,52 @@ class CrearPlanView(LoginRequiredMixin, FormView):
     success_url = reverse_lazy('dashboard')
 
     def form_valid(self, form):
-        user_profile = self.request.user.userprofile
+        user_profile, created = UserProfile.objects.get_or_create(user=self.request.user)
         
-        prompt = f"""
+        prompt = """
         Crea un plan de entrenamiento de gimnasio para un usuario con las siguientes características:
-        - Peso: {user_profile.peso} kg
-        - Altura: {user_profile.altura} cm
-        - Edad: {user_profile.edad} años
-        - Nivel de fitness: {user_profile.get_nivel_fitness_display()}
-        - Objetivos: {user_profile.objetivos}
+        - Peso: {} kg
+        - Altura: {} cm
+        - Edad: {} años
+        - Nivel de fitness: {}
+        - Objetivos: {}
 
         El plan debe ser para 5 días a la semana (Lunes a Viernes).
         Genera el plan en formato JSON con la siguiente estructura:
         {{
             "dias": [
-                {
+                {{
                     "dia_semana": "Lunes",
                     "ejercicios": [
-                        {
+                        {{
                             "nombre": "Nombre del Ejercicio",
                             "series": 4,
-                            "repeticiones": "8-12"
-                        }
+                            "repeticiones": "8-12",
+                            "descripcion": "Descripción detallada del ejercicio en formato markdown"
+                        }}
                     ]
-                }
+                }}
             ]
         }}
-        """
+        """.format(
+            user_profile.peso,
+            user_profile.altura,
+            user_profile.edad,
+            user_profile.get_nivel_fitness_display(),
+            user_profile.objetivos
+        )
         
         try:
-            # Configure your OpenAI API key here
-            openai.api_key = 'YOUR_API_KEY'
+            # Configure your Gemini API key here. Remember to keep it secret.
+            genai.configure(api_key=os.environ.get('api_key'))
+
+            model = genai.GenerativeModel('gemini-2.5-flash')
             
-            response = openai.Completion.create(
-                engine="text-davinci-003",
-                prompt=prompt,
-                max_tokens=1500,
-                n=1,
-                stop=None,
-                temperature=0.7,
-            )
+            response = model.generate_content(prompt)
             
-            plan_generado = json.loads(response.choices[0].text)
+            # Clean up the response to remove markdown and parse JSON
+            cleaned_response = response.text.strip().lstrip("```json").rstrip("```")
+            plan_generado = json.loads(cleaned_response)
             self.guardar_plan(plan_generado)
             
         except Exception as e:

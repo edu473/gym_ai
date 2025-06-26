@@ -4,17 +4,17 @@
 <div class="container mt-4">
     <h2>Biblioteca de Ejercicios</h2>
 
-    <div class="list-group mt-4">
-        {% for ejercicio in ejercicios %}
-            <a href="#" class="list-group-item list-group-item-action">
-                <div class="d-flex w-100 justify-content-between">
-                    <h5 class="mb-1">{{ ejercicio.nombre }}</h5>
-                </div>
-                {% if ejercicio.descripcion %}
-                    <p class="mb-1">{{ ejercicio.descripcion }}</p>
-                {% endif %}
-            </a>
-        {% endfor %}
-    </div>
+    {% for group, exercises in ejercicios_agrupados.items %}
+        <h3 class="mt-4">{{ group }}</h3>
+        <div class="list-group mt-2">
+            {% for ejercicio in exercises %}
+                <a href="{% url 'detalle-ejercicio' ejercicio.pk %}" class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <h5 class="mb-1">{{ ejercicio.nombre }}</h5>
+                    </div>
+                </a>
+            {% endfor %}
+        </div>
+    {% endfor %}
 </div>
 {% endblock %}

@@ -28,6 +28,8 @@ class UserProfile(models.Model):
 # Modelo para los Ejercicios
 class Ejercicio(models.Model):
     nombre = models.CharField(max_length=100, unique=True, help_text="Nombre del ejercicio")
+    descripcion = models.TextField(help_text="Descripción detallada del ejercicio", null=True, blank=True)
+    muscle_group = models.CharField(max_length=50, help_text="Grupo muscular principal", null=True, blank=True)
 
     def __str__(self):
         return self.nombre

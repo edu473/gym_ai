@@ -1,0 +1,9 @@
+{% extends 'tracker/base.html' %}
+{% load markdown_deux_tags %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>{{ ejercicio.nombre }}</h2>
+    <p>{{ ejercicio.descripcion|markdown }}</p>
+</div>
+{% endblock %}

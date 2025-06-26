@@ -1,0 +1,42 @@
+{% extends 'tracker/base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Asistente de Sesión</h2>
+    <div id="timer"></div>
+    <button id="start-rest-timer">Iniciar Descanso</button>
+<button id="finish-session">Finalizar Sesión</button>
+</div>
+
+<script>
+let timer;
+let restTime = 60; // 60 segundos de descanso
+
+document.getElementById('start-rest-timer').addEventListener('click', () => {
+    clearInterval(timer);
+    let timeLeft = restTime;
+    document.getElementById('timer').innerText = timeLeft;
+    timer = setInterval(() => {
+        timeLeft--;
+        document.getElementById('timer').innerText = timeLeft;
+        if (timeLeft <= 0) {
+            clearInterval(timer);
+            alert('¡Tiempo de descanso terminado!');
+        }
+    }, 1000);
+});
+
+document.getElementById('finish-session').addEventListener('click', () => {
+    fetch("{% url 'finalizar-sesion' sesion.pk %}", {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    }).then(response => {
+        if (response.ok) {
+            window.location.href = "{% url 'lista-sesiones' %}";
+        }
+    });
+});
+</script>
+{% endblock %}
